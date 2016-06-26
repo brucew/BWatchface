@@ -1,0 +1,31 @@
+{
+    "author": "Bruce White",
+    "dependencies": {},
+    "keywords": [
+        "pebble-app"
+    ],
+    "name": "bw",
+    "pebble": {
+        "capabilities": [
+            ""
+        ],
+        "displayName": "BWatchface",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "dummy"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "chalk"
+        ],
+        "uuid": "129a94de-1523-4c61-91ed-4c9410eaed30",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
