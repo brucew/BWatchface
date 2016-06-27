@@ -33,16 +33,19 @@ static int s_radius = 0;
 static bool s_animating = false;
 static float s_minute_angle = 0;
 static float s_hour_angle = 0;
+static char s_date_buffer[20];
 
 static GRect s_TL_frame;
 static GRect s_TR_frame;
 static GRect s_BL_frame;
 static GRect s_BR_frame;
 
+
 static bool s_TL_blocked = false;
 static bool s_TR_blocked = false;
 static bool s_BL_blocked = false;
 static bool s_BR_blocked = false;
+
 
 
 /*************************** AnimationImplementation **************************/
@@ -94,7 +97,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
       layer_set_frame(text_layer_get_layer(s_date_layer), s_BR_frame);
     }
     
-    text_layer_set_text(s_date_layer, "26");
+    strftime(s_date_buffer, sizeof(s_date_buffer), "%a%n%d", tick_time);
+    text_layer_set_text(s_date_layer, s_date_buffer);
 
   }
   
@@ -108,10 +112,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
 static int hours_to_minutes(int hours_out_of_12) {
   return (int)(float)(((float)hours_out_of_12 / 12.0F) * 60.0F);
 }
-
-static void date_update_proc(Layer *layer, GContext *ctx) {
-    text_layer_set_text(s_date_layer, "26");
-}  
 
 static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_antialiased(ctx, ANTIALIASING);
@@ -160,10 +160,12 @@ static void window_load(Window *window) {
   GRect window_bounds = layer_get_bounds(window_layer);
 
   s_center = grect_center_point(&window_bounds);
-  s_TL_frame = GRect(COMPLICATION_MARGIN, COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
-  s_TR_frame = GRect(s_center.x + COMPLICATION_MARGIN, COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
-  s_BL_frame = GRect(COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
-  s_BR_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
+  int16_t frame_w = s_center.x - COMPLICATION_MARGIN;
+  int16_t frame_h = s_center.y - COMPLICATION_MARGIN;
+  s_TL_frame = GRect(COMPLICATION_MARGIN, COMPLICATION_MARGIN, frame_w, frame_h);
+  s_TR_frame = GRect(s_center.x, COMPLICATION_MARGIN, frame_w, frame_h);
+  s_BL_frame = GRect(COMPLICATION_MARGIN, s_center.y, frame_w, frame_h);
+  s_BR_frame = GRect(s_center.x, s_center.y, frame_w, frame_h);
 
   s_background_layer = layer_create(window_bounds);
   layer_set_update_proc(s_background_layer, background_update_proc);
@@ -172,7 +174,7 @@ static void window_load(Window *window) {
   s_date_layer = text_layer_create(s_BR_frame);
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
-  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
 //   layer_set_update_proc(s_date_layer, date_update_proc);
   layer_add_child(s_background_layer, text_layer_get_layer(s_date_layer));  
@@ -211,7 +213,7 @@ static void hands_update(Animation *anim, AnimationProgress dist_normalized) {
 
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
   // Activate backlight if tilted toward the wearer
-  if(!data[0].did_vibrate && data[0].y < -600) {
+  if(!data[0].did_vibrate && data[0].x > -800 && ((data[1].y * 2) - data[0].y) < -800) {
     light_enable_interaction();
   }
 }
