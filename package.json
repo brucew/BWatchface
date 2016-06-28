@@ -7,12 +7,13 @@
     "name": "bw",
     "pebble": {
         "capabilities": [
-            ""
+            "location"
         ],
         "displayName": "BWatchface",
         "enableMultiJS": true,
         "messageKeys": [
-            "dummy"
+            "TEMPERATURE",
+            "CONDITIONS"
         ],
         "projectType": "native",
         "resources": {
