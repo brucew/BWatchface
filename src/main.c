@@ -1,5 +1,10 @@
 #include <pebble.h>
 
+#define TRIG_360 TRIG_MAX_ANGLE
+#define TRIG_180 (TRIG_MAX_ANGLE / 2)
+#define TRIG_120 (TRIG_MAX_ANGLE / 3)
+#define TRIG_90 (TRIG_MAX_ANGLE / 4)
+
 #define COLORS       PBL_IF_COLOR_ELSE(true, false)
 #define ANTIALIASING true
 
@@ -32,8 +37,7 @@ static bool s_animating = false;
 
 static float s_minute_angle = 0;
 static float s_hour_angle = 0;
-static float s_complications_angle = 0;
-static GPoint s_complications_center;
+static float s_complication_angles[2];
 
 static TextLayer *s_date_layer;
 static char s_date_buffer[4];
@@ -70,12 +74,12 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 
 /************************************ UI **************************************/
 static void date_update_proc() {
-  float date_angle = s_complications_angle + (TRIG_MAX_ANGLE / 4);
+  float date_angle = s_complication_angles[0];
 
   GRect date_frame = (GRect) {
     .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)36 / TRIG_MAX_RATIO) + s_complications_center.x - 36,
-      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)36 / TRIG_MAX_RATIO) + s_complications_center.y - 28,
+      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - 36,
+      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - 28,
     },
     .size = (GSize) {
       .w = 73,
@@ -89,12 +93,12 @@ static void date_update_proc() {
 
 
 static void temp_update_proc() {
-  float temp_angle = s_complications_angle - (TRIG_MAX_ANGLE / 4);
+  float temp_angle = s_complication_angles[1];
 
   GRect temp_frame = (GRect) {
     .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)36 / TRIG_MAX_RATIO) + s_complications_center.x - 36,
-      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)36 / TRIG_MAX_RATIO) + s_complications_center.y - 28,
+      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - 36,
+      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - 28,
     },
     .size = (GSize) {
       .w = 73,
@@ -143,7 +147,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   graphics_context_set_antialiased(ctx, ANTIALIASING);
 
   // Calculate angles
-  if(s_animating) {
+  if (s_animating) {
     s_minute_angle = TRIG_MAX_ANGLE * s_anim_time.minutes / 60;
     // Hours out of 60 for smoothness
     s_hour_angle = TRIG_MAX_ANGLE * s_anim_time.hours / 60;
@@ -164,27 +168,47 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 
   // Draw hands with positive length only
   graphics_context_set_stroke_width(ctx, 8);
-  if(s_radius > HAND_MARGIN) {
+  if (s_radius > HAND_MARGIN) {
     graphics_context_set_stroke_color(ctx, MINUTE_HAND_COLOR);
     graphics_draw_line(ctx, s_center, minute_hand);
   }
-  if(s_radius > HAND_MARGIN) {
+  if (s_radius > HAND_MARGIN) {
     graphics_context_set_stroke_color(ctx, HOUR_HAND_COLOR);
     graphics_draw_line(ctx, s_center, hour_hand);
   }
   
-  // Plot complication pointer
+  // Calculate complication angles
   float delta_angle = abs(s_minute_angle - s_hour_angle);
   float bisect_angle = (s_minute_angle + s_hour_angle) / 2;
-  s_complications_angle = delta_angle > (TRIG_MAX_ANGLE / 2) ? bisect_angle : bisect_angle + (TRIG_MAX_ANGLE / 2);
-  s_complications_angle -= s_complications_angle > TRIG_MAX_ANGLE ? TRIG_MAX_ANGLE : 0;
-  s_complications_center = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_complications_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_complications_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
-  };
+  if (delta_angle > TRIG_120 && delta_angle < (TRIG_120 * 2)) {    
+    s_complication_angles[0] = bisect_angle;
+    s_complication_angles[1] = bisect_angle + TRIG_180;
+    s_complication_angles[1] -= s_complication_angles[1] > TRIG_360 ? TRIG_360 : 0;
+  } else {
+    if (delta_angle < TRIG_180) {
+      delta_angle = TRIG_360 - delta_angle;
+      bisect_angle += TRIG_180;
+      bisect_angle -= bisect_angle > TRIG_360 ? TRIG_360 : 0;
+    }
+    delta_angle = delta_angle / 6;
+    s_complication_angles[0] = bisect_angle - delta_angle;
+    s_complication_angles[1] = bisect_angle + delta_angle;
+  }
+  
+  // Plot complication pointers
   graphics_context_set_stroke_width(ctx, 2);
   graphics_context_set_stroke_color(ctx, GColorGreen);
-  graphics_draw_line(ctx, s_center, s_complications_center);
+  GPoint complication_center = (GPoint) {
+    .x = (int16_t)(sin_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
+    .y = (int16_t)(-cos_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
+  };
+  graphics_draw_line(ctx, s_center, complication_center);
+  complication_center = (GPoint) {
+    .x = (int16_t)(sin_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
+    .y = (int16_t)(-cos_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
+  };
+  graphics_draw_line(ctx, s_center, complication_center);
+
 
   date_update_proc();
   temp_update_proc();
@@ -257,7 +281,7 @@ static void hands_update(Animation *anim, AnimationProgress dist_normalized) {
 
 static void accel_data_handler(AccelData *data, uint32_t num_samples) {
   // Activate backlight if tilted toward the wearer
-  if (data[1].x < -200 || data[1].x > 200) return;
+  if (data[1].x < -400 || data[1].x > 400) return;
   if (data[1].y > 0) return;
   if (data[1].did_vibrate) return;
   if (((data[1].y * 1.2) - data[0].y) > -200) return;
@@ -335,6 +359,7 @@ static void init() {
 }
 
 static void deinit() {
+  layer_destroy(s_background_layer);
   window_destroy(s_main_window);
 }
 
