@@ -1,15 +1,16 @@
 #include <pebble.h>
 #include "main.h"
 #include "hands.h"
+#include "complications.h"
 
 #define HAND_MARGIN  20
 #define MINUTE_HAND_COLOR GColorWhite
 #define HOUR_HAND_COLOR GColorFolly
 
-extern GPoint s_center;
-extern Time s_last_time;
+extern GPoint g_center;
+extern Time g_time;
+extern int g_radius;
 extern Time s_anim_time;
-extern int s_radius;
 extern bool s_animating;
 
 static float s_minute_angle;
@@ -34,30 +35,30 @@ void hands_update_proc(Layer *layer, GContext *ctx) {
     // Hours out of 60 for smoothness
     s_hour_angle = TRIG_MAX_ANGLE * s_anim_time.hours / 60;
   } else {
-    s_minute_angle = TRIG_MAX_ANGLE * s_last_time.minutes / 60;
-    s_hour_angle = TRIG_MAX_ANGLE * s_last_time.hours / 12;
+    s_minute_angle = TRIG_MAX_ANGLE * g_time.minutes / 60;
+    s_hour_angle = TRIG_MAX_ANGLE * g_time.hours / 12;
     s_hour_angle += s_minute_angle >= TRIG_180 ? TRIG_180 / 12 : 0;
   }
 
   // Plot hands
   GPoint minute_hand = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_minute_angle) * (int32_t)s_radius / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_minute_angle) * (int32_t)s_radius / TRIG_MAX_RATIO) + s_center.y,
+    .x = (int16_t)(sin_lookup(s_minute_angle) * (int32_t)g_radius / TRIG_MAX_RATIO) + g_center.x,
+    .y = (int16_t)(-cos_lookup(s_minute_angle) * (int32_t)g_radius / TRIG_MAX_RATIO) + g_center.y,
   };
   GPoint hour_hand = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_hour_angle) * (int32_t)(s_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_hour_angle) * (int32_t)(s_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + s_center.y,
+    .x = (int16_t)(sin_lookup(s_hour_angle) * (int32_t)(g_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + g_center.x,
+    .y = (int16_t)(-cos_lookup(s_hour_angle) * (int32_t)(g_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + g_center.y,
   };
 
   // Draw hands with positive length only
   graphics_context_set_stroke_width(ctx, 8);
-  if (s_radius > HAND_MARGIN) {
+  if (g_radius > HAND_MARGIN) {
     graphics_context_set_stroke_color(ctx, MINUTE_HAND_COLOR);
-    graphics_draw_line(ctx, s_center, minute_hand);
+    graphics_draw_line(ctx, g_center, minute_hand);
   }
-  if (s_radius > HAND_MARGIN) {
+  if (g_radius > HAND_MARGIN) {
     graphics_context_set_stroke_color(ctx, HOUR_HAND_COLOR);
-    graphics_draw_line(ctx, s_center, hour_hand);
+    graphics_draw_line(ctx, g_center, hour_hand);
   }
   
   // Calculate complication angles
@@ -93,8 +94,8 @@ void hands_update_proc(Layer *layer, GContext *ctx) {
 //   graphics_draw_line(ctx, s_center, complication_center);
 
 
-  date_update_proc();
-  temp_update_proc();
+  date_update();
+  temp_update();
 }
 
 

@@ -3,5 +3,5 @@
 
 Layer* date_create(Layer *parent_layer);
 Layer* temp_create(Layer *parent_layer);
-void date_update_proc();
-void temp_update_proc();
+void date_update();
+void temp_update();

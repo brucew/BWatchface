@@ -16,14 +16,14 @@ static Layer *s_hands_layer;
 static Layer *s_date_layer;
 static Layer *s_temp_layer;
 
-GPoint s_center;
-Time s_last_time;
+GPoint g_center;
+Time g_time;
 Time s_anim_time;
-int s_radius = 0;
+int g_radius = 0;
 bool s_animating = false;
 
-char s_date_buffer[4];
-char s_temp_buffer[16];
+char g_date_buffer[4];
+char g_temp_buffer[16];
 
 /*************************** AnimationImplementation **************************/
 
@@ -56,16 +56,16 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
-  s_last_time.hours = tick_time->tm_hour;
-  s_last_time.hours -= (s_last_time.hours > 12) ? 12 : 0;
-  s_last_time.minutes = tick_time->tm_min;
+  g_time.hours = tick_time->tm_hour;
+  g_time.hours -= (g_time.hours > 12) ? 12 : 0;
+  g_time.minutes = tick_time->tm_min;
   
   // Redraw
   if(s_hands_layer) {
     layer_mark_dirty(s_hands_layer);
   }
  
-  strftime(s_date_buffer, sizeof(s_date_buffer), "%d", tick_time);
+  strftime(g_date_buffer, sizeof(g_date_buffer), "%d", tick_time);
   
   // Get weather update every 30 minutes
   if(tick_time->tm_min % 30 == 0) {
@@ -91,7 +91,7 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect window_bounds = layer_get_bounds(window_layer);
 
-  s_center = grect_center_point(&window_bounds);
+  g_center = grect_center_point(&window_bounds);
 
   s_background_layer = background_create(window_layer);
   s_date_layer = date_create(s_background_layer);
@@ -107,7 +107,6 @@ static void window_unload(Window *window) {
   layer_destroy(s_date_layer);
   layer_destroy(s_background_layer);
 
-
 }
 
 /*********************************** App **************************************/
@@ -117,14 +116,14 @@ static int anim_percentage(AnimationProgress dist_normalized, int max) {
 }
 
 static void radius_update(Animation *anim, AnimationProgress dist_normalized) {
-  s_radius = anim_percentage(dist_normalized, FINAL_RADIUS);
+  g_radius = anim_percentage(dist_normalized, FINAL_RADIUS);
 
   layer_mark_dirty(s_background_layer);
 }
 
 static void hands_update(Animation *anim, AnimationProgress dist_normalized) {
-  s_anim_time.hours = anim_percentage(dist_normalized, hours_to_minutes(s_last_time.hours));
-  s_anim_time.minutes = anim_percentage(dist_normalized, s_last_time.minutes);
+  s_anim_time.hours = anim_percentage(dist_normalized, hours_to_minutes(g_time.hours));
+  s_anim_time.minutes = anim_percentage(dist_normalized, g_time.minutes);
 
   layer_mark_dirty(s_background_layer);
 }
@@ -138,11 +137,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   // If temp data is available, use it
   if(temp_tuple) {
 //     snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d°", (int)temp_tuple->value->int32);
-    snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d", (int)temp_tuple->value->int32);
+    snprintf(g_temp_buffer, sizeof(g_temp_buffer), "%d", (int)temp_tuple->value->int32);
 
   }
   
-  temp_update_proc();
+  temp_update();
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {

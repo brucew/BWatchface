@@ -10,10 +10,10 @@
 #define COMPLICATION_W 74
 #define COMPLICATION_H 34
 
-extern GPoint s_center;
+extern GPoint g_center;
 extern float s_complication_angles[2];
-extern char s_date_buffer[4];
-extern char s_temp_buffer[16];
+extern char g_date_buffer[4];
+extern char g_temp_buffer[16];
 
 
 static GRect s_date_frame;
@@ -26,7 +26,7 @@ static Layer *s_temp_layer;
 
 
 Layer* date_create(Layer *parent_layer) {
-  s_date_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
+  s_date_frame = GRect(g_center.x + COMPLICATION_MARGIN, g_center.y + COMPLICATION_MARGIN, g_center.x - COMPLICATION_MARGIN, g_center.y - COMPLICATION_MARGIN);
   s_date_text_layer = text_layer_create(s_date_frame);
   
   text_layer_set_background_color(s_date_text_layer, GColorClear);
@@ -40,9 +40,26 @@ Layer* date_create(Layer *parent_layer) {
   return s_date_layer;
 }
 
+void date_update() {
+  float date_angle = s_complication_angles[0];
+
+  GRect date_frame = (GRect) {
+    .origin = (GPoint) {
+      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + g_center.x - COMPLICATION_ORIGIN_OFFSET_X,
+      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + g_center.y - COMPLICATION_ORIGIN_OFFSET_Y
+    },
+    .size = (GSize) {
+      .w = COMPLICATION_W,
+      .h = COMPLICATION_H
+    },
+  };
+  layer_set_frame(s_date_layer, date_frame);
+  text_layer_set_text(s_date_text_layer, g_date_buffer);
+
+}
 
 Layer* temp_create(Layer *parent_layer) {
-  s_temp_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
+  s_temp_frame = GRect(g_center.x + COMPLICATION_MARGIN, g_center.y + COMPLICATION_MARGIN, g_center.x - COMPLICATION_MARGIN, g_center.y - COMPLICATION_MARGIN);
   s_temp_text_layer = text_layer_create(s_temp_frame);
   
   text_layer_set_background_color(s_temp_text_layer, GColorClear);
@@ -56,32 +73,13 @@ Layer* temp_create(Layer *parent_layer) {
   return s_temp_layer;
 }
 
-void date_update_proc() {
-  float date_angle = s_complication_angles[0];
-
-  GRect date_frame = (GRect) {
-    .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
-      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
-    },
-    .size = (GSize) {
-      .w = COMPLICATION_W,
-      .h = COMPLICATION_H
-    },
-  };
-  layer_set_frame(s_date_layer, date_frame);
-  text_layer_set_text(s_date_text_layer, s_date_buffer);
-
-}
-
-
-void temp_update_proc() {
+void temp_update() {
   float temp_angle = s_complication_angles[1];
 
   GRect temp_frame = (GRect) {
     .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
-      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
+      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + g_center.x - COMPLICATION_ORIGIN_OFFSET_X,
+      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + g_center.y - COMPLICATION_ORIGIN_OFFSET_Y
     },
     .size = (GSize) {
       .w = COMPLICATION_W,
@@ -89,7 +87,7 @@ void temp_update_proc() {
     },
   };
   layer_set_frame(s_temp_layer, temp_frame);
-  text_layer_set_text(s_temp_text_layer, s_temp_buffer);
+  text_layer_set_text(s_temp_text_layer, g_temp_buffer);
 
 }
 
