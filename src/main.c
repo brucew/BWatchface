@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "background.h"
 
 #define TRIG_360 TRIG_MAX_ANGLE
 #define TRIG_180 (TRIG_MAX_ANGLE / 2)
@@ -14,12 +15,16 @@
 #define ANIMATION_DURATION 500
 #define ANIMATION_DELAY    600
 
-#define BACKGROUND_COLOR GColorBlue
 #define MINUTE_HAND_COLOR GColorWhite
 #define HOUR_HAND_COLOR GColorFolly
 
 #define COMPLICATION_MARGIN 20
-#define COMPLICATION_CENTER_RADIUS 40
+#define COMPLICATION_CENTER_RADIUS 48
+#define COMPLICATION_FONT FONT_KEY_BITHAM_34_MEDIUM_NUMBERS  
+#define COMPLICATION_ORIGIN_OFFSET_X 36
+#define COMPLICATION_ORIGIN_OFFSET_Y 18
+#define COMPLICATION_W 74
+#define COMPLICATION_H 34
 
 typedef struct {
   int hours;
@@ -78,12 +83,12 @@ static void date_update_proc() {
 
   GRect date_frame = (GRect) {
     .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - 36,
-      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - 28,
+      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
+      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
     },
     .size = (GSize) {
-      .w = 73,
-      .h = 42
+      .w = COMPLICATION_W,
+      .h = COMPLICATION_H
     },
   };
   layer_set_frame(text_layer_get_layer(s_date_layer), date_frame);
@@ -97,12 +102,12 @@ static void temp_update_proc() {
 
   GRect temp_frame = (GRect) {
     .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - 36,
-      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - 28,
+      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
+      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
     },
     .size = (GSize) {
-      .w = 73,
-      .h = 42
+      .w = COMPLICATION_W,
+      .h = COMPLICATION_H
     },
   };
   layer_set_frame(text_layer_get_layer(s_temp_layer), temp_frame);
@@ -195,30 +200,23 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
     s_complication_angles[1] = bisect_angle + delta_angle;
   }
   
-  // Plot complication pointers
-  graphics_context_set_stroke_width(ctx, 2);
-  graphics_context_set_stroke_color(ctx, GColorGreen);
-  GPoint complication_center = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
-  };
-  graphics_draw_line(ctx, s_center, complication_center);
-  complication_center = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
-  };
-  graphics_draw_line(ctx, s_center, complication_center);
+//   // Plot complication pointers
+//   graphics_context_set_stroke_width(ctx, 2);
+//   graphics_context_set_stroke_color(ctx, GColorGreen);
+//   GPoint complication_center = (GPoint) {
+//     .x = (int16_t)(sin_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
+//     .y = (int16_t)(-cos_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
+//   };
+//   graphics_draw_line(ctx, s_center, complication_center);
+//   complication_center = (GPoint) {
+//     .x = (int16_t)(sin_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
+//     .y = (int16_t)(-cos_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
+//   };
+//   graphics_draw_line(ctx, s_center, complication_center);
 
 
   date_update_proc();
   temp_update_proc();
-}
-
-static void background_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_fill_color(ctx, BACKGROUND_COLOR);
-  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
 }
 
 static void window_load(Window *window) {
@@ -227,15 +225,13 @@ static void window_load(Window *window) {
 
   s_center = grect_center_point(&window_bounds);
 
-  s_background_layer = layer_create(window_bounds);
-  layer_set_update_proc(s_background_layer, background_update_proc);
-  layer_add_child(window_layer, s_background_layer);
-
+  s_background_layer = background_create(window_layer);
+  
   s_date_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
   s_date_layer = text_layer_create(s_date_frame);
   text_layer_set_background_color(s_date_layer, GColorClear);
   text_layer_set_text_color(s_date_layer, GColorWhite);
-  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+  text_layer_set_font(s_date_layer, fonts_get_system_font(COMPLICATION_FONT));
   text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
   layer_add_child(s_background_layer, text_layer_get_layer(s_date_layer));  
 
@@ -243,7 +239,7 @@ static void window_load(Window *window) {
   s_temp_layer = text_layer_create(s_temp_frame);
   text_layer_set_background_color(s_temp_layer, GColorClear);
   text_layer_set_text_color(s_temp_layer, GColorWhite);
-  text_layer_set_font(s_temp_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+  text_layer_set_font(s_temp_layer, fonts_get_system_font(COMPLICATION_FONT));
   text_layer_set_text_alignment(s_temp_layer, GTextAlignmentCenter);
   layer_add_child(s_background_layer, text_layer_get_layer(s_temp_layer));  
 
@@ -255,7 +251,10 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   layer_destroy(s_hands_layer);
+  layer_destroy(text_layer_get_layer(s_temp_layer));
   layer_destroy(text_layer_get_layer(s_date_layer));
+  layer_destroy(s_background_layer);
+
 
 }
 
@@ -297,7 +296,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
   // If temp data is available, use it
   if(temp_tuple) {
-    snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d°", (int)temp_tuple->value->int32);
+//     snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d°", (int)temp_tuple->value->int32);
+    snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d", (int)temp_tuple->value->int32);
+
   }
   
   text_layer_set_text(s_temp_layer, s_temp_buffer);
@@ -359,7 +360,6 @@ static void init() {
 }
 
 static void deinit() {
-  layer_destroy(s_background_layer);
   window_destroy(s_main_window);
 }
 
