@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "main.h"
+#include "accel.h"
 #include "background.h"
 #include "hands.h"
 
@@ -192,17 +193,6 @@ static void hands_update(Animation *anim, AnimationProgress dist_normalized) {
 }
 
 
-static void accel_data_handler(AccelData *data, uint32_t num_samples) {
-  // Activate backlight if tilted toward the wearer
-  if (data[1].x < -400 || data[1].x > 400) return;
-  if (data[1].y > 0) return;
-  if (data[1].did_vibrate) return;
-  if (((data[1].y * 1.2) - data[0].y) > -200) return;
-  
-  light_enable_interaction();
-
-}
-
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Read tuples for data
   Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
@@ -257,9 +247,8 @@ static void init() {
   };
   animate(2 * ANIMATION_DURATION, ANIMATION_DELAY, &hands_impl, true);
 
-  // Subscribe to batched accelerometer data events
-  accel_data_service_subscribe(2, accel_data_handler);
-
+  accel_subscribe();
+  
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
@@ -274,6 +263,7 @@ static void init() {
 }
 
 static void deinit() {
+  accel_unsubscribe();
   window_destroy(s_main_window);
 }
 
