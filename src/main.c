@@ -1,22 +1,12 @@
 #include <pebble.h>
+#include "main.h"
 #include "background.h"
+#include "hands.h"
 
-#define TRIG_360 TRIG_MAX_ANGLE
-#define TRIG_180 (TRIG_MAX_ANGLE / 2)
-#define TRIG_120 (TRIG_MAX_ANGLE / 3)
-#define TRIG_90 (TRIG_MAX_ANGLE / 4)
-
-#define COLORS       PBL_IF_COLOR_ELSE(true, false)
-#define ANTIALIASING true
-
-#define HAND_MARGIN  20
-#define FINAL_RADIUS 70
 
 #define ANIMATION_DURATION 500
 #define ANIMATION_DELAY    600
 
-#define MINUTE_HAND_COLOR GColorWhite
-#define HOUR_HAND_COLOR GColorFolly
 
 #define COMPLICATION_MARGIN 20
 #define COMPLICATION_CENTER_RADIUS 48
@@ -26,23 +16,19 @@
 #define COMPLICATION_W 74
 #define COMPLICATION_H 34
 
-typedef struct {
-  int hours;
-  int minutes;
-} Time;
-
 static Window *s_main_window;
 static Layer *s_background_layer;
 static Layer *s_hands_layer;
 
-static GPoint s_center;
-static Time s_last_time, s_anim_time;
-static int s_radius = 0;
-static bool s_animating = false;
+GPoint s_center;
+Time s_last_time;
+Time s_anim_time;
+int s_radius = 0;
+bool s_animating = false;
 
-static float s_minute_angle = 0;
-static float s_hour_angle = 0;
-static float s_complication_angles[2];
+float s_minute_angle = 0;
+float s_hour_angle = 0;
+float s_complication_angles[2];
 
 static TextLayer *s_date_layer;
 static char s_date_buffer[4];
@@ -78,7 +64,7 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 }
 
 /************************************ UI **************************************/
-static void date_update_proc() {
+void date_update_proc() {
   float date_angle = s_complication_angles[0];
 
   GRect date_frame = (GRect) {
@@ -97,7 +83,7 @@ static void date_update_proc() {
 }
 
 
-static void temp_update_proc() {
+void temp_update_proc() {
   float temp_angle = s_complication_angles[1];
 
   GRect temp_frame = (GRect) {
@@ -148,76 +134,6 @@ static int hours_to_minutes(int hours_out_of_12) {
   return (int)(float)(((float)hours_out_of_12 / 12.0F) * 60.0F);
 }
 
-static void hands_update_proc(Layer *layer, GContext *ctx) {
-  graphics_context_set_antialiased(ctx, ANTIALIASING);
-
-  // Calculate angles
-  if (s_animating) {
-    s_minute_angle = TRIG_MAX_ANGLE * s_anim_time.minutes / 60;
-    // Hours out of 60 for smoothness
-    s_hour_angle = TRIG_MAX_ANGLE * s_anim_time.hours / 60;
-  } else {
-    s_minute_angle = TRIG_MAX_ANGLE * s_last_time.minutes / 60;
-    s_hour_angle = TRIG_MAX_ANGLE * s_last_time.hours / 12;
-  }
-
-  // Plot hands
-  GPoint minute_hand = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_minute_angle) * (int32_t)s_radius / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_minute_angle) * (int32_t)s_radius / TRIG_MAX_RATIO) + s_center.y,
-  };
-  GPoint hour_hand = (GPoint) {
-    .x = (int16_t)(sin_lookup(s_hour_angle) * (int32_t)(s_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + s_center.x,
-    .y = (int16_t)(-cos_lookup(s_hour_angle) * (int32_t)(s_radius - HAND_MARGIN) / TRIG_MAX_RATIO) + s_center.y,
-  };
-
-  // Draw hands with positive length only
-  graphics_context_set_stroke_width(ctx, 8);
-  if (s_radius > HAND_MARGIN) {
-    graphics_context_set_stroke_color(ctx, MINUTE_HAND_COLOR);
-    graphics_draw_line(ctx, s_center, minute_hand);
-  }
-  if (s_radius > HAND_MARGIN) {
-    graphics_context_set_stroke_color(ctx, HOUR_HAND_COLOR);
-    graphics_draw_line(ctx, s_center, hour_hand);
-  }
-  
-  // Calculate complication angles
-  float delta_angle = abs(s_minute_angle - s_hour_angle);
-  float bisect_angle = (s_minute_angle + s_hour_angle) / 2;
-  if (delta_angle > TRIG_120 && delta_angle < (TRIG_120 * 2)) {    
-    s_complication_angles[0] = bisect_angle;
-    s_complication_angles[1] = bisect_angle + TRIG_180;
-    s_complication_angles[1] -= s_complication_angles[1] > TRIG_360 ? TRIG_360 : 0;
-  } else {
-    if (delta_angle < TRIG_180) {
-      delta_angle = TRIG_360 - delta_angle;
-      bisect_angle += TRIG_180;
-      bisect_angle -= bisect_angle > TRIG_360 ? TRIG_360 : 0;
-    }
-    delta_angle = delta_angle / 6;
-    s_complication_angles[0] = bisect_angle - delta_angle;
-    s_complication_angles[1] = bisect_angle + delta_angle;
-  }
-  
-//   // Plot complication pointers
-//   graphics_context_set_stroke_width(ctx, 2);
-//   graphics_context_set_stroke_color(ctx, GColorGreen);
-//   GPoint complication_center = (GPoint) {
-//     .x = (int16_t)(sin_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
-//     .y = (int16_t)(-cos_lookup(s_complication_angles[0]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
-//   };
-//   graphics_draw_line(ctx, s_center, complication_center);
-//   complication_center = (GPoint) {
-//     .x = (int16_t)(sin_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x,
-//     .y = (int16_t)(-cos_lookup(s_complication_angles[1]) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y,
-//   };
-//   graphics_draw_line(ctx, s_center, complication_center);
-
-
-  date_update_proc();
-  temp_update_proc();
-}
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
@@ -243,9 +159,7 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_temp_layer, GTextAlignmentCenter);
   layer_add_child(s_background_layer, text_layer_get_layer(s_temp_layer));  
 
-  s_hands_layer = layer_create(window_bounds);
-  layer_set_update_proc(s_hands_layer, hands_update_proc);
-  layer_add_child(s_background_layer, s_hands_layer);
+  s_hands_layer = hands_create(s_background_layer);
   
 }
 
