@@ -2,6 +2,7 @@
 #include "main.h"
 #include "accel.h"
 #include "background.h"
+#include "complications.h"
 #include "hands.h"
 
 
@@ -9,17 +10,11 @@
 #define ANIMATION_DELAY    600
 
 
-#define COMPLICATION_MARGIN 20
-#define COMPLICATION_CENTER_RADIUS 48
-#define COMPLICATION_FONT FONT_KEY_BITHAM_34_MEDIUM_NUMBERS  
-#define COMPLICATION_ORIGIN_OFFSET_X 36
-#define COMPLICATION_ORIGIN_OFFSET_Y 18
-#define COMPLICATION_W 74
-#define COMPLICATION_H 34
-
 static Window *s_main_window;
 static Layer *s_background_layer;
 static Layer *s_hands_layer;
+static Layer *s_date_layer;
+static Layer *s_temp_layer;
 
 GPoint s_center;
 Time s_last_time;
@@ -27,26 +22,19 @@ Time s_anim_time;
 int s_radius = 0;
 bool s_animating = false;
 
-float s_minute_angle = 0;
-float s_hour_angle = 0;
-float s_complication_angles[2];
-
-static TextLayer *s_date_layer;
-static char s_date_buffer[4];
-static GRect s_date_frame;
-
-static TextLayer *s_temp_layer;
-static char s_temp_buffer[16];
-static GRect s_temp_frame;
+char s_date_buffer[4];
+char s_temp_buffer[16];
 
 /*************************** AnimationImplementation **************************/
 
 static void animation_started(Animation *anim, void *context) {
   s_animating = true;
+  
 }
 
 static void animation_stopped(Animation *anim, bool stopped, void *context) {
   s_animating = false;
+  
 }
 
 static void animate(int duration, int delay, AnimationImplementation *implementation, bool handlers) {
@@ -65,43 +53,6 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 }
 
 /************************************ UI **************************************/
-void date_update_proc() {
-  float date_angle = s_complication_angles[0];
-
-  GRect date_frame = (GRect) {
-    .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
-      .y = (int16_t)(-cos_lookup(date_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
-    },
-    .size = (GSize) {
-      .w = COMPLICATION_W,
-      .h = COMPLICATION_H
-    },
-  };
-  layer_set_frame(text_layer_get_layer(s_date_layer), date_frame);
-  text_layer_set_text(s_date_layer, s_date_buffer);
-
-}
-
-
-void temp_update_proc() {
-  float temp_angle = s_complication_angles[1];
-
-  GRect temp_frame = (GRect) {
-    .origin = (GPoint) {
-      .x = (int16_t)(sin_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.x - COMPLICATION_ORIGIN_OFFSET_X,
-      .y = (int16_t)(-cos_lookup(temp_angle) * (int32_t)COMPLICATION_CENTER_RADIUS / TRIG_MAX_RATIO) + s_center.y - COMPLICATION_ORIGIN_OFFSET_Y
-    },
-    .size = (GSize) {
-      .w = COMPLICATION_W,
-      .h = COMPLICATION_H
-    },
-  };
-  layer_set_frame(text_layer_get_layer(s_temp_layer), temp_frame);
-  text_layer_set_text(s_temp_layer, s_temp_buffer);
-
-}
-
 
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
@@ -143,31 +94,17 @@ static void window_load(Window *window) {
   s_center = grect_center_point(&window_bounds);
 
   s_background_layer = background_create(window_layer);
-  
-  s_date_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
-  s_date_layer = text_layer_create(s_date_frame);
-  text_layer_set_background_color(s_date_layer, GColorClear);
-  text_layer_set_text_color(s_date_layer, GColorWhite);
-  text_layer_set_font(s_date_layer, fonts_get_system_font(COMPLICATION_FONT));
-  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
-  layer_add_child(s_background_layer, text_layer_get_layer(s_date_layer));  
-
-  s_temp_frame = GRect(s_center.x + COMPLICATION_MARGIN, s_center.y + COMPLICATION_MARGIN, s_center.x - COMPLICATION_MARGIN, s_center.y - COMPLICATION_MARGIN);
-  s_temp_layer = text_layer_create(s_temp_frame);
-  text_layer_set_background_color(s_temp_layer, GColorClear);
-  text_layer_set_text_color(s_temp_layer, GColorWhite);
-  text_layer_set_font(s_temp_layer, fonts_get_system_font(COMPLICATION_FONT));
-  text_layer_set_text_alignment(s_temp_layer, GTextAlignmentCenter);
-  layer_add_child(s_background_layer, text_layer_get_layer(s_temp_layer));  
-
+  s_date_layer = date_create(s_background_layer);
+  s_temp_layer = temp_create(s_background_layer);
   s_hands_layer = hands_create(s_background_layer);
+
   
 }
 
 static void window_unload(Window *window) {
   layer_destroy(s_hands_layer);
-  layer_destroy(text_layer_get_layer(s_temp_layer));
-  layer_destroy(text_layer_get_layer(s_date_layer));
+  layer_destroy(s_temp_layer);
+  layer_destroy(s_date_layer);
   layer_destroy(s_background_layer);
 
 
@@ -196,7 +133,7 @@ static void hands_update(Animation *anim, AnimationProgress dist_normalized) {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Read tuples for data
   Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
-  Tuple *conditions_tuple = dict_find(iterator, MESSAGE_KEY_CONDITIONS);
+//   Tuple *conditions_tuple = dict_find(iterator, MESSAGE_KEY_CONDITIONS);
 
   // If temp data is available, use it
   if(temp_tuple) {
@@ -205,7 +142,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
   }
   
-  text_layer_set_text(s_temp_layer, s_temp_buffer);
+  temp_update_proc();
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {

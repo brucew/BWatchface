@@ -12,9 +12,9 @@ extern Time s_anim_time;
 extern int s_radius;
 extern bool s_animating;
 
-extern float s_minute_angle;
-extern float s_hour_angle;
-extern float s_complication_angles[2];
+static float s_minute_angle;
+static float s_hour_angle;
+float s_complication_angles[2];
 
 
 Layer* hands_create(Layer *parent_layer) {
