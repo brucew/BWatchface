@@ -21,8 +21,10 @@ Time s_anim_time;
 int g_radius = 0;
 bool s_animating = false;
 
-char g_date_buffer[4];
-char g_temp_buffer[8];
+char g_date_d_buffer[4];
+char g_date_a_buffer[6];
+char g_temp_now_buffer[8];
+char g_temp_high_buffer[8];
 
 /*************************** AnimationImplementation **************************/
 
@@ -64,7 +66,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits changed) {
     layer_mark_dirty(s_hands_layer);
   }
  
-  strftime(g_date_buffer, sizeof(g_date_buffer), "%d", tick_time);
+  strftime(g_date_d_buffer, sizeof(g_date_d_buffer), "%d", tick_time);
+  strftime(g_date_a_buffer, sizeof(g_date_a_buffer), "%a", tick_time);
   
   // Get weather update every 30 minutes
   if(tick_time->tm_min % 30 == 0) {

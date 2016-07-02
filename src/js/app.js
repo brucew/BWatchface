@@ -24,6 +24,12 @@ function locationSuccess(pos) {
       var temperature = Math.round(json.main.temp);
       console.log('Temperature is ' + temperature);
 
+
+      // High temperature in Kelvin requires adjustment
+      var high = Math.round(json.main.temp_max);
+      console.log('High will be ' + high);
+
+
       // Conditions
       var conditions = json.weather[0].main;      
       console.log('Conditions are ' + conditions);
@@ -31,6 +37,7 @@ function locationSuccess(pos) {
       // Assemble dictionary using our keys
       var dictionary = {
         'TEMPERATURE': temperature,
+        'HIGH': high,
         'CONDITIONS': conditions
       };
       
