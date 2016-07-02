@@ -1,5 +1,7 @@
-#include "main.h"
+#include <pebble.h>
 #include "background.h"
+
+#define BACKGROUND_COLOR GColorBlue
 
 Layer* background_create(Layer *window_layer) {
   Layer *background_layer = layer_create(layer_get_bounds(window_layer));
