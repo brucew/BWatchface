@@ -1,8 +1,7 @@
 #include <pebble.h>
-#include "main.h"
 #include "accel.h"
 
-void accel_data_handler(AccelData *data, uint32_t num_samples) {
+static void accel_data_handler(AccelData *data, uint32_t num_samples) {
   // Activate backlight if tilted toward the wearer
   if (data[1].x < -400 || data[1].x > 400) return;
   if (data[1].y > 0) return;

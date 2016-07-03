@@ -2,6 +2,7 @@
 #include "main.h"
 #include "accel.h"
 #include "background.h"
+#include "battery.h"
 #include "complications.h"
 #include "hands.h"
 #include "messages.h"
@@ -23,6 +24,7 @@ char g_date_d_buffer[4];
 char g_date_a_buffer[6];
 char g_temp_now_buffer[8];
 char g_temp_high_buffer[8];
+char g_temp_low_buffer[8];
 
 /*************************** AnimationImplementation **************************/
 
@@ -56,7 +58,12 @@ static void animate(int duration, int delay, AnimationImplementation *implementa
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   // Store time
   g_time.hours = tick_time->tm_hour;
-  g_time.hours -= (g_time.hours > 12) ? 12 : 0;
+  if(g_time.hours > 12) {
+    g_time.pm = true;
+    g_time.hours -= 12;
+  } else {
+    g_time.pm = false;
+  }
   g_time.minutes = tick_time->tm_min;
   
   // Redraw
@@ -88,11 +95,12 @@ static void window_load(Window *window) {
   s_background_layer = background_create(window_layer);
   complications_create(s_background_layer);
   s_hands_layer = hands_create(s_background_layer);
-
+  battery_create(s_background_layer);
   
 }
 
 static void window_unload(Window *window) {
+  battery_destroy();
   layer_destroy(s_hands_layer);
   complications_destroy();
   layer_destroy(s_background_layer);

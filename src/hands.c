@@ -51,7 +51,7 @@ void hands_update_proc(Layer *layer, GContext *ctx) {
   };
 
   // Draw hands with positive length only
-  graphics_context_set_stroke_width(ctx, 8);
+  graphics_context_set_stroke_width(ctx, 9);
   if (g_radius > HAND_MARGIN) {
     graphics_context_set_stroke_color(ctx, MINUTE_HAND_COLOR);
     graphics_draw_line(ctx, g_center, minute_hand);
@@ -93,9 +93,7 @@ void hands_update_proc(Layer *layer, GContext *ctx) {
 //   };
 //   graphics_draw_line(ctx, s_center, complication_center);
 
-
-  date_update();
-  temp_update();
+  complications_update_frame();
 }
 
 

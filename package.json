@@ -14,7 +14,8 @@
         "messageKeys": [
             "TEMPERATURE",
             "CONDITIONS",
-            "HIGH"
+            "HIGH",
+            "LOW"
         ],
         "projectType": "native",
         "resources": {
@@ -39,7 +40,7 @@
         "targetPlatforms": [
             "chalk"
         ],
-        "uuid": "129a94de-1523-4c61-91ed-4c9410eaed30",
+        "uuid": "07e490c0-4938-4a3f-aec8-50e6040b4227",
         "watchapp": {
             "watchface": true
         }

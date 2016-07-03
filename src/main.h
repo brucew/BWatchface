@@ -12,6 +12,7 @@
 typedef struct {
   int hours;
   int minutes;
+  bool pm;
 } Time;
 
 

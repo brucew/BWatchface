@@ -56,7 +56,6 @@ function locationSuccess(pos) {
     function(responseText) {
       // responseText contains a JSON object with weather info
       var json = JSON.parse(responseText);
-      console.log(json.city.name);
       
       // High temperature
       var high = Math.round(json.list[0].temp.max);

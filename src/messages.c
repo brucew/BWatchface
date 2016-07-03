@@ -4,24 +4,28 @@
 
 extern char g_temp_now_buffer[8];
 extern char g_temp_high_buffer[8];
+extern char g_temp_low_buffer[8];
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Read tuples for data
   Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_TEMPERATURE);
   Tuple *high_tuple = dict_find(iterator, MESSAGE_KEY_HIGH);
+  Tuple *low_tuple = dict_find(iterator, MESSAGE_KEY_LOW);
 //   Tuple *conditions_tuple = dict_find(iterator, MESSAGE_KEY_CONDITIONS);
 
   // If temp data is available, use it
   if(temp_tuple) {
     snprintf(g_temp_now_buffer, sizeof(g_temp_now_buffer), "%d°", (int)temp_tuple->value->int32);
-
   }
   
-
   // If high data is available, use it
   if(high_tuple) {
     snprintf(g_temp_high_buffer, sizeof(g_temp_high_buffer), "%d°", (int)high_tuple->value->int32);
-
+  }
+  
+  // If low data is available, use it
+  if(low_tuple) {
+    snprintf(g_temp_low_buffer, sizeof(g_temp_low_buffer), "%d°", (int)low_tuple->value->int32);
   }
   
   temp_update();
