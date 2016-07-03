@@ -1,7 +1,7 @@
 #pragma once
 #include <pebble.h>
 
-Layer* date_create(Layer *parent_layer);
-Layer* temp_create(Layer *parent_layer);
+void complications_create(Layer *parent_layer);
+void complications_destroy();
 void date_update();
 void temp_update();

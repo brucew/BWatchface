@@ -18,7 +18,22 @@
         ],
         "projectType": "native",
         "resources": {
-            "media": []
+            "media": [
+                {
+                    "characterRegex": "[0-9A-Za-z\u00b0]",
+                    "file": "fonts/BPreplay_16.otf",
+                    "name": "COMPLICATION_FONT_16",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "characterRegex": "[0-9A-Za-z\u00b0]",
+                    "file": "fonts/BPreplay_30.otf",
+                    "name": "COMPLICATION_FONT_30",
+                    "targetPlatforms": null,
+                    "type": "font"
+                }
+            ]
         },
         "sdkVersion": "3",
         "targetPlatforms": [

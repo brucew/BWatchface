@@ -13,15 +13,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
   // If temp data is available, use it
   if(temp_tuple) {
-//     snprintf(s_temp_buffer, sizeof(s_temp_buffer), "%d°", (int)temp_tuple->value->int32);
-    snprintf(g_temp_now_buffer, sizeof(g_temp_now_buffer), "%d", (int)temp_tuple->value->int32);
+    snprintf(g_temp_now_buffer, sizeof(g_temp_now_buffer), "%d°", (int)temp_tuple->value->int32);
 
   }
   
 
   // If high data is available, use it
   if(high_tuple) {
-    snprintf(g_temp_high_buffer, sizeof(g_temp_high_buffer), "%d", (int)high_tuple->value->int32);
+    snprintf(g_temp_high_buffer, sizeof(g_temp_high_buffer), "%d°", (int)high_tuple->value->int32);
 
   }
   

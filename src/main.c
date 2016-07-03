@@ -12,8 +12,6 @@
 static Window *s_main_window;
 static Layer *s_background_layer;
 static Layer *s_hands_layer;
-static Layer *s_date_layer;
-static Layer *s_temp_layer;
 
 GPoint g_center;
 Time g_time;
@@ -88,8 +86,7 @@ static void window_load(Window *window) {
   g_center = grect_center_point(&window_bounds);
 
   s_background_layer = background_create(window_layer);
-  s_date_layer = date_create(s_background_layer);
-  s_temp_layer = temp_create(s_background_layer);
+  complications_create(s_background_layer);
   s_hands_layer = hands_create(s_background_layer);
 
   
@@ -97,8 +94,7 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   layer_destroy(s_hands_layer);
-  layer_destroy(s_temp_layer);
-  layer_destroy(s_date_layer);
+  complications_destroy();
   layer_destroy(s_background_layer);
 
 }
