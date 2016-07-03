@@ -14,21 +14,15 @@ function locationSuccess(pos) {
   var url = 'http://api.openweathermap.org/data/2.5/weather?lat=' +
       pos.coords.latitude + '&lon=' + pos.coords.longitude + '&units=imperial&appid=' + myAPIKey;
 
-  // Send request to OpenWeatherMap
+  // Send request for current conditions to OpenWeatherMap
   xhrRequest(url, 'GET', 
     function(responseText) {
       // responseText contains a JSON object with weather info
       var json = JSON.parse(responseText);
 
-      // Temperature in Kelvin requires adjustment
+      // Temperature
       var temperature = Math.round(json.main.temp);
       console.log('Temperature is ' + temperature);
-
-
-      // High temperature in Kelvin requires adjustment
-      var high = Math.round(json.main.temp_max);
-      console.log('High will be ' + high);
-
 
       // Conditions
       var conditions = json.weather[0].main;      
@@ -37,22 +31,60 @@ function locationSuccess(pos) {
       // Assemble dictionary using our keys
       var dictionary = {
         'TEMPERATURE': temperature,
-        'HIGH': high,
         'CONDITIONS': conditions
       };
       
       // Send to Pebble
       Pebble.sendAppMessage(dictionary,
         function(e) {
-          console.log('Weather info sent to Pebble successfully!');
+          console.log('Current conditions sent to Pebble successfully!');
         },
         function(e) {
-          console.log('Error sending weather info to Pebble!');
+          console.log('Error sending current conditions to Pebble!');
         }
       );
       
     }      
   );
+
+  // Construct URL
+  url = 'http://api.openweathermap.org/data/2.5/forecast/daily?lat=' +
+      pos.coords.latitude + '&lon=' + pos.coords.longitude + '&units=imperial&appid=' + myAPIKey;
+
+  // Send request for forecast to OpenWeatherMap
+  xhrRequest(url, 'GET', 
+    function(responseText) {
+      // responseText contains a JSON object with weather info
+      var json = JSON.parse(responseText);
+      console.log(json.city.name);
+      
+      // High temperature
+      var high = Math.round(json.list[0].temp.max);
+      console.log('High will be ' + high);
+
+      // Low temperature
+      var low = Math.round(json.list[0].temp.min);
+      console.log('Low will be ' + low);
+
+      // Assemble dictionary using our keys
+      var dictionary = {
+        'HIGH': high,
+        'LOW': low
+      };
+      
+      // Send to Pebble
+      Pebble.sendAppMessage(dictionary,
+        function(e) {
+          console.log('Forecast sent to Pebble successfully!');
+        },
+        function(e) {
+          console.log('Error sending forecast to Pebble!');
+        }
+      );
+      
+    }      
+  );
+
 }
 
 function locationError(err) {
