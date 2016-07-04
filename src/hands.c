@@ -5,7 +5,7 @@
 
 #define HAND_MARGIN  20
 #define MINUTE_HAND_COLOR GColorWhite
-#define HOUR_HAND_COLOR GColorFolly
+#define HOUR_HAND_COLOR GColorOrange
 
 extern GPoint g_center;
 extern Time g_time;

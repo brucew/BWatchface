@@ -7,7 +7,7 @@
 
 #define COLORS       PBL_IF_COLOR_ELSE(true, false)
 
-#define FINAL_RADIUS 70
+#define FINAL_RADIUS 73
 
 typedef struct {
   int hours;

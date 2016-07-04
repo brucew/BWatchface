@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "battery.h"
 
+#define BATTERY_MARGIN 10
 #define BATTERY_SIZE 11
 #define BATTERY_RADIUS 5
 
@@ -12,15 +13,13 @@ static GPoint s_battery_center;
 
 static void battery_state_handler(BatteryChargeState charge) {
   if (charge.charge_percent >= 90) {
-    s_battery_color = GColorInchworm;
-  } else if (charge.charge_percent >= 50) {
+    s_battery_color = GColorBrightGreen;
+  } else if (charge.charge_percent >= 30) {
     s_battery_color = GColorGreen;
-  } else if (charge.charge_percent > 20) {
-    s_battery_color = GColorWhite;
   } else if (charge.charge_percent > 10) {
     s_battery_color = GColorYellow;
   } else {
-    s_battery_color = GColorRed;
+    s_battery_color = GColorFolly;
   }
   
   if (s_battery_layer) {
@@ -41,7 +40,7 @@ void battery_create(Layer *parent_layer) {
   s_battery_layer = layer_create((GRect) {
     .origin = (GPoint) {
       .x = g_center.x - BATTERY_RADIUS,
-      .y = BATTERY_RADIUS+2
+      .y = BATTERY_RADIUS + BATTERY_MARGIN
     },
     .size = (GSize) {
       .w = BATTERY_SIZE,

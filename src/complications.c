@@ -148,7 +148,7 @@ void date_update() {
 }
 
 void temp_update() {
-  if((g_time.hours >= 7 && g_time.pm) || (g_time.hours < 7 && g_time.pm)) {
+  if((g_time.hours >= 7 && g_time.pm) || (g_time.hours < 7 && !g_time.pm)) {
     s_temp_now_frame = (GRect) {
       .origin = GPoint(0, 0),
       .size = (GSize) {

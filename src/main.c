@@ -93,16 +93,16 @@ static void window_load(Window *window) {
   g_center = grect_center_point(&window_bounds);
 
   s_background_layer = background_create(window_layer);
-  complications_create(s_background_layer);
-  s_hands_layer = hands_create(s_background_layer);
   battery_create(s_background_layer);
+  s_hands_layer = hands_create(s_background_layer);
+  complications_create(s_hands_layer);
   
 }
 
 static void window_unload(Window *window) {
-  battery_destroy();
-  layer_destroy(s_hands_layer);
   complications_destroy();
+  layer_destroy(s_hands_layer);
+  battery_destroy();
   layer_destroy(s_background_layer);
 
 }
